@@ -2,33 +2,6 @@
 
 Mục tiêu của file này là chia việc để 4 người làm song song, hạn chế sửa trùng file, ai cũng có phần code/report để commit và vẫn ghép được end-to-end.
 
-## Nguyên tắc làm việc chung
-
-- Mỗi người làm trên một branch riêng: `feature/member-1-source`, `feature/member-2-clean-eval`, `feature/member-3-observability`, `feature/member-4-integration`.
-- Không tự ý đổi chữ ký hàm public hoặc tên path trong `src/core/config.py`. Nếu bắt buộc đổi contract, báo cả nhóm trước khi commit.
-- Không commit `.env`, API key, cache Chroma lớn, hoặc file dữ liệu tạm không dùng trong báo cáo.
-- Mỗi commit nên theo dạng: `memberX: short description`, ví dụ `member2: build clean dataframe schema`.
-- Trước khi merge, owner phải ghi rõ đã chạy lệnh nào và artifact nào được tạo.
-- Baseline, corrupted và repaired phải dùng cùng một evaluation set trong `data/eval/test_set.json` để so sánh công bằng.
-
-## Cách Commit Theo Từng Task
-
-Mỗi task hoàn thành nên có một commit riêng, không gom quá nhiều thay đổi vào một commit lớn. Một commit hợp lệ cần có đủ 3 phần:
-
-- Code hoặc report đúng phạm vi file của task.
-- Artifact nhỏ hoặc ghi chú kiểm tra nếu task tạo output trong `data/`.
-- Message nêu rõ thành viên và việc đã làm.
-
-Quy trình khuyến nghị cho mỗi task:
-
-```powershell
-git status --short
-git add <file-1> <file-2>
-git commit -m "memberX: <task da hoan thanh>"
-```
-
-Không dùng `git add .` nếu trong repo đang có file output hoặc thay đổi của người khác. Khi cần commit artifact sinh ra trong `data/`, chỉ add đúng file được yêu cầu trong output kiểm tra.
-
 ## Contract Chung Cần Chốt Trước Khi Code
 
 | Contract | Quy ước |
@@ -135,6 +108,76 @@ Commit theo từng task:
 | Đọc lại raw snapshot | `src/ingestion/crossref.py` | `member1: load raw records from snapshot` |
 | Ghi chú schema raw cho nhóm nếu cần | `PHAN_CONG_NHOM_4.md` hoặc report cá nhân | `member1: document raw ingestion schema` |
 
+
+## Kế Hoạch Thực Hiện Riêng - Thành Viên 1
+
+Mục tiêu của Thành viên 1 là hoàn thiện toàn bộ phần lấy dữ liệu Crossref và bàn giao raw records ổn định cho Thành viên 2. Không bắt đầu sửa cleaning hoặc pipeline nếu chưa có thống nhất với nhóm.
+
+### Thứ Tự Công Việc
+
+| Bước | Việc cần làm | File xử lý | Đầu vào cần có | Đầu ra bàn giao | Commit gợi ý |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Đọc contract và cấu hình source | `src/core/config.py`, `src/ingestion/crossref.py` | `Settings`, `PaperRecord`, `source_query`, `source_filter`, `max_results` | Hiểu API query và schema raw cần trả về | Không cần commit nếu chỉ đọc |
+| 2 | Implement parse Crossref payload | `src/ingestion/crossref.py` | Payload mẫu từ Crossref hoặc raw response | `list[PaperRecord]` có `paper_id`, `title`, `summary`, `authors`, `categories`, `published`, URLs | `member1: parse crossref payload into paper records` |
+| 3 | Xử lý dữ liệu thiếu và chuẩn hóa nhẹ | `src/ingestion/crossref.py` | Crossref items có thể thiếu DOI, abstract, authors, date | Bỏ record không hợp lệ, normalize text cơ bản, ID ổn định | `member1: handle missing crossref fields` |
+| 4 | Implement fetch source records | `src/ingestion/crossref.py` | `settings.source_query`, `settings.source_filter`, `settings.max_results` | Gọi API, retry `429/503`, lưu raw response | `member1: fetch crossref source with retry` |
+| 5 | Lưu raw records sau parse | `src/ingestion/crossref.py`, `data/raw/crossref_records.json` | List `PaperRecord` từ parser | JSON raw records đọc lại được | `member1: save parsed raw paper records` |
+| 6 | Implement load raw records | `src/ingestion/crossref.py` | `data/raw/crossref_records.json` | Đọc snapshot thành `list[PaperRecord]` | `member1: load raw records from snapshot` |
+| 7 | Smoke test riêng module ingestion | `src/ingestion/crossref.py`, `data/raw/` | `.env` nếu cần, internet, dependency đã cài | In được số lượng records > 0, raw files tồn tại | `member1: verify crossref ingestion outputs` nếu có sửa nhỏ |
+| 8 | Bàn giao cho Thành viên 2 | Report cá nhân hoặc ghi chú nhóm | Raw records đã đọc được | Thành viên 2 xác nhận dùng được cho cleaning | `member1: document raw ingestion handoff` nếu có ghi docs |
+
+### Checklist Khi Code
+
+- [ ] Không hard-code absolute path, dùng `settings.paths.raw_api_response` và `settings.paths.raw_records_json`.
+- [ ] `paper_id` ổn định. Ưu tiên DOI; nếu DOI thiếu thì dùng cách tạo ID nhất quán từ title/source.
+- [ ] `title` và `summary` không để kiểu list/object thô từ API lọt sang cleaning.
+- [ ] `authors` luôn là `list[str]`, kể cả khi API thiếu author.
+- [ ] `categories` luôn là `list[str]`.
+- [ ] `published` và `updated` dùng chuỗi date dễ parse lại ở bước cleaning.
+- [ ] Raw API response được lưu trước khi parse để truy vết lỗi.
+- [ ] Raw records JSON không chứa dataclass object chưa serialize được.
+
+### Lệnh Kiểm Tra Riêng
+
+Chạy fetch thật và in số record:
+
+```powershell
+uv run python -c "from core.config import load_settings; from ingestion.crossref import fetch_source_records; s=load_settings(); records=fetch_source_records(s); print(len(records)); print(records[0])"
+```
+
+Kiểm tra load lại snapshot:
+
+```powershell
+uv run python -c "from core.config import load_settings; from ingestion.crossref import load_raw_records; s=load_settings(); records=load_raw_records(s.paths.raw_records_json); print(len(records)); print(records[0].paper_id)"
+```
+
+Kiểm tra file output:
+
+```powershell
+Get-ChildItem data\raw
+```
+
+### Điều Kiện Bàn Giao Cho Thành Viên 2
+
+Chỉ bàn giao khi đủ các điều kiện sau:
+
+- `data/raw/crossref_response.json` tồn tại.
+- `data/raw/crossref_records.json` tồn tại.
+- `load_raw_records(settings.paths.raw_records_json)` chạy được.
+- Có ít nhất một record hợp lệ.
+- Mỗi record hợp lệ có `paper_id`, `title`, `summary`, `published`.
+- Thành viên 2 có thể gọi `build_clean_dataframe(records, run_date)` mà không cần biết chi tiết payload Crossref gốc.
+
+### Khi Gặp Lỗi
+
+| Lỗi | Cách xử lý |
+| --- | --- |
+| Crossref trả `429` | Retry có delay/backoff, không spam API liên tục |
+| Crossref trả `503` | Retry vài lần rồi báo blocker kèm status code |
+| Item thiếu DOI | Dùng fallback ID ổn định hoặc bỏ record nếu không đủ title/URL |
+| Abstract có HTML/XML tag | Strip tag hoặc normalize trước khi đưa vào `summary` |
+| Date thiếu hoặc format lạ | Ghi chuỗi rỗng hoặc fallback an toàn để Thành viên 2 xử lý tiếp |
+| JSON không serialize được | Convert dataclass sang dict trước khi ghi file |
 ## Thành Viên 2 - Data Model & Evaluation-Set Owner
 
 Branch: `feature/member-2-clean-eval`
