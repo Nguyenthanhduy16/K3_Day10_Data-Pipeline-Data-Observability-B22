@@ -115,14 +115,14 @@ Evaluation set dùng `ground_truth_doc_ids` để kiểm tra retrieval có tìm 
 
 ### Metrics chính
 
-| Metric/signal | Baseline | Corrupted | Repaired | Nhận xét cá nhân |
-| --- | ---: | ---: | ---: | --- |
-| `retrieval_hit_rate` | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | Source quality ảnh hưởng trực tiếp đến khả năng retrieval |
-| `mean_token_f1` | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | Summary sạch giúp câu trả lời bám sát ground truth hơn |
-| `judge_accuracy` | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | Cần đối chiếu với artifact answers |
-| `mean_judge_score` | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | [Điền sau khi Thành viên 4 chạy] | Cần đọc report cuối |
-| Quality checks | Raw records đọc được, ID ổn định | [Điền sau corruption] | [Điền sau repair] | Ingestion cần giữ schema sạch để quality pass |
-| Freshness status | Có `published` để tính freshness | [Điền sau corruption] | [Điền sau repair] | Date chuẩn hóa là input cho freshness |
+| Metric/signal | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
+| ---------------------- | -------: | --------: | -------: | ------------------------- |
+| `retrieval_hit_rate` | 1.000 | 0.750 | 1.000 | Corruption làm mất/nhiễu doc khiến retrieval trượt 25% |
+| `mean_token_f1` | 1.000 | 0.709 | 1.000 | Summary blank/nhiễu làm câu trả lời lệch ground truth |
+| `judge_accuracy` | 1.000 | 0.667 | 1.000 | LLM judge (OpenRouter) xác nhận chất lượng giảm |
+| `mean_judge_score` | 5.000 | 3.833 | 5.000 | Điểm judge giảm hơn 1 điểm khi corrupted |
+| Quality checks | 9/9 | 6/9 | 9/9 | Bắt đúng duplicate + stale |
+| Freshness status | fresh | stale (5 rows) | fresh | `stale_published_date` đẩy 5 dòng vượt ngưỡng 180 ngày |
 
 ### Kết luận từ số liệu
 
