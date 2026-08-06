@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-08-06T05:23:12.163804+00:00",
+  "seed": 20251010,
+  "input_rows": 24,
+  "output_rows": 23,
+  "removed_rows": 3,
+  "affected_paper_ids": [
+    "10.1007/s10278-026-02086-9",
+    "10.1093/sleep/zsag091.0346",
+    "10.1111/exsy.70341",
+    "10.20944/preprints202602.0996.v1",
+    "10.2118/234689-pa",
+    "10.21203/rs.3.rs-10012178/v1",
+    "10.21203/rs.3.rs-9770645/v1",
+    "10.21203/rs.3.rs-9882260/v1",
+    "10.22214/ijraset.2026.82233",
+    "10.32473/flairs.39.1.141782",
+    "10.3390/app16052244",
+    "10.3390/buildings16132637",
+    "10.35314/3y9hy151",
+    "10.47576/2949-1894.2026.7.7.023",
+    "10.52060/juptik.v4i1.4318",
+    "10.54254/2753-8818/2026.dl34055",
+    "10.55041/isjem07213"
+  ],
+  "scenarios": [
+    {
+      "name": "drop_latest_records",
+      "description": "Removed the most recently published papers to simulate a failed incremental load.",
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.1111/exsy.70341",
+        "10.2118/234689-pa",
+        "10.1007/s10278-026-02086-9"
+      ],
+      "details": {
+        "strategy": "sort by published desc",
+        "count": 3
+      }
+    },
+    {
+      "name": "blank_summary",
+      "description": "Blanked the summary field so those documents lose their embedding content.",
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.21203/rs.3.rs-10012178/v1",
+        "10.52060/juptik.v4i1.4318",
+        "10.54254/2753-8818/2026.dl34055"
+      ],
+      "details": {
+        "new_value": ""
+      }
+    },
+    {
+      "name": "noisy_summary",
+      "description": "Wrapped summaries in scraper/OCR junk so the embedded text stops matching the question wording.",
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.32473/flairs.39.1.141782",
+        "10.3390/app16052244",
+        "10.35314/3y9hy151"
+      ],
+      "details": {
+        "noise_chars": 402
+      }
+    },
+    {
+      "name": "truncated_title",
+      "description": "Truncated titles so exact-title lookup in the agent no longer resolves the document.",
+      "affected_rows": 3,
+      "paper_ids": [
+        "10.3390/buildings16132637",
+        "10.55041/isjem07213",
+        "10.20944/preprints202602.0996.v1"
+      ],
+      "details": {
+        "kept_chars": 12
+      }
+    },
+    {
+      "name": "stale_published_date",
+      "description": "Pushed publication dates far into the past so the freshness monitor must flag the corpus.",
+      "affected_rows": 4,
+      "paper_ids": [
+        "10.47576/2949-1894.2026.7.7.023",
+        "10.21203/rs.3.rs-9882260/v1",
+        "10.21203/rs.3.rs-9770645/v1",
+        "10.1093/sleep/zsag091.0346"
+      ],
+      "details": {
+        "shift_days": 1200
+      }
+    },
+    {
+      "name": "duplicate_rows",
+      "description": "Appended duplicate rows to simulate a non-idempotent pipeline retry.",
+      "affected_rows": 2,
+      "paper_ids": [
+        "10.21203/rs.3.rs-9882260/v1",
+        "10.22214/ijraset.2026.82233"
+      ],
+      "details": {
+        "duplicated_copies": 1
+      }
+    }
+  ],
+  "expected_signals": [
+    "row count drops below the baseline",
+    "paper_id is no longer unique because of duplicated rows",
+    "empty/short summaries appear in the corpus",
+    "age_days grows past the freshness threshold",
+    "retrieval and answer metrics degrade on the same test set"
+  ],
+  "repair_verification": {
+    "baseline_rows": 24,
+    "corrupted_rows": 23,
+    "repaired_rows": 24,
+    "rows_lost_by_corruption": 3,
+    "rows_restored_by_repair": 3,
+    "duplicate_rows_in_corrupted": 2,
+    "duplicate_rows_in_repaired": 0,
+    "affected_ids_present_after_repair": 17,
+    "affected_ids_total": 17,
+    "matches_baseline_ids": true,
+    "missing_after_repair": []
+  }
+}
