@@ -1,0 +1,14 @@
+[
+  {
+    "id": "q1",
+    "question": "What is the main focus of the paper 'Hi-RAG: A Hierarchical Retrieval-Augmented Generation Framework for Scalable and Generalisable Tool Selection in Large Language Model Agents'?",
+    "ground_truth": "As tool repositories for Large Language Model (LLM) agents grow from dozens to hundreds of endpoints, flat retrieval paradigms that treat the repository as an unstructured list suffer from context overload, cross-domain semantic collision and degraded selection accuracy.",
+    "agent_answer": "The paper titled \"Hi-RAG: A Hierarchical Retrieval-Augmented Generation Framework for Scalable and Generalisable Tool Selection in Large Language Model Agents\" focuses on addressing the challenges faced by Large Language Model (LLM) agents as their tool repositories expand. It critiques flat retrieval paradigms that treat tool repositories as unstructured lists, which can lead to context overload, semantic collisions, and reduced selection accuracy.\n\nThe authors propose a new framework called Hi-RAG, which utilizes a hierarchical approach to tool selection. This framework consists of a two-stage process: \n\n1. **Stage 1** involves a hybrid retrieval strategy that combines BM25 sparse retrieval with dense bi-encoder search to efficiently identify candidate services.\n2. **Stage 2** employs type-aware re-ranking over a local heterogeneous graph, integrating a domain-level gating mechanism with contextualized tool attention for precise service scoring.\n\nAdditionally, the paper introduces MCPBench, a benchmark for hierarchical tool selection, and presents experimental results demonstrating that Hi-RAG improves accuracy and reduces token consumption compared to existing methods. The framework is shown to be scalable and effective across various LLMs."
+  },
+  {
+    "id": "q2",
+    "question": "Who authored 'Hi-RAG: A Hierarchical Retrieval-Augmented Generation Framework for Scalable and Generalisable Tool Selection in Large Language Model Agents'?",
+    "ground_truth": "Wei Tian, Yuhao Zhou",
+    "agent_answer": "The paper titled \"Hi-RAG: A Hierarchical Retrieval-Augmented Generation Framework for Scalable and Generalisable Tool Selection in Large Language Model Agents\" was authored by Wei Tian and Yuhao Zhou."
+  }
+]

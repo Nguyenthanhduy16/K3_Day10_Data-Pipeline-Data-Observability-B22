@@ -1,0 +1,77 @@
+{
+  "report_name": "baseline",
+  "total_rows": 24,
+  "checks_total": 9,
+  "checks_passed": 9,
+  "checks_failed": 0,
+  "all_passed": true,
+  "checks": [
+    {
+      "name": "row_count_positive",
+      "passed": true,
+      "details": {
+        "total_rows": 24
+      }
+    },
+    {
+      "name": "required_columns_present",
+      "passed": true,
+      "details": {
+        "missing_columns": []
+      }
+    },
+    {
+      "name": "paper_id_not_null",
+      "passed": true,
+      "details": {
+        "null_count": 0
+      }
+    },
+    {
+      "name": "paper_id_unique",
+      "passed": true,
+      "details": {
+        "duplicate_count": 0
+      }
+    },
+    {
+      "name": "title_not_mostly_empty",
+      "passed": true,
+      "details": {
+        "empty_ratio": 0.0,
+        "threshold": 0.2
+      }
+    },
+    {
+      "name": "summary_not_mostly_empty",
+      "passed": true,
+      "details": {
+        "empty_ratio": 0.0,
+        "threshold": 0.2
+      }
+    },
+    {
+      "name": "text_for_embedding_not_mostly_empty",
+      "passed": true,
+      "details": {
+        "empty_ratio": 0.0,
+        "threshold": 0.2
+      }
+    },
+    {
+      "name": "no_duplicate_rows",
+      "passed": true,
+      "details": {
+        "duplicate_rows": 0
+      }
+    },
+    {
+      "name": "freshness_within_threshold",
+      "passed": true,
+      "details": {
+        "stale_rows": 0,
+        "threshold_days": 180
+      }
+    }
+  ]
+}
