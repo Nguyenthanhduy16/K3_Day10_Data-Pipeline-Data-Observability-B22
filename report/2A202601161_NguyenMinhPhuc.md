@@ -5,12 +5,12 @@
 | Thông tin | Nội dung |
 | --- | --- |
 | Họ và tên | Nguyễn Minh Phúc |
-| MSSV | 01161 |
+| MSSV | 2A202601161 |
 | Khóa/Lớp | K3 |
 | Tên nhóm | Nhóm 4 (B22) |
 | Vai trò chính | Thành viên 4 — Corruption & Integration owner |
 | Repository | https://github.com/Nguyenthanhduy16/K3_Day10_Data-Pipeline-Data-Observability-B22 |
-| Ngày hoàn thành | 2026-08-06 (phần code đã xong và đã tích hợp với TV1 + TV2; artifacts cuối còn chờ TV3 — xem mục 6) |
+| Ngày hoàn thành | 2026-08-06 (code đã xong, tích hợp đủ TV1–TV3; pipeline đã chạy trọn vẹn và sinh đủ artifact cuối) |
 
 ## 2. Vai trò và phạm vi công việc
 
@@ -19,8 +19,8 @@
 | Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao | Trạng thái |
 | --- | --- | --- | --- | --- |
 | Corruption scenarios | `src/ingestion/corruption.py` — `corrupt_clean_dataframe(df, output_log_path)` | Cleaned dataframe từ Thành viên 2 | Corrupted dataframe + `data/results/corruption_log.json` | **Hoàn thành và đã chạy trên clean data thật của TV2** — cả 6 scenario kích hoạt đúng volume |
-| Baseline orchestration | `src/pipelines/phase1.py` — `main()` | Raw records (TV1), cleaning + test set (TV2), quality + reporting (TV3) | `baseline_metrics.json`, `baseline_answers.json`, `phase1_report.md` | Hoàn thành code; bước load raw / clean / validate test set đã tích hợp thông với TV1 + TV2 trên dữ liệu thật; **chưa sinh được artifact cuối** vì dừng ở bước 6 (TV3) |
-| Corruption/repair/compare flow | `src/pipelines/corruption_flow.py` — `main()` | Baseline artifacts + raw snapshot | `corrupted_metrics.json`, `repaired_metrics.json`, `corruption_report.md` | Hoàn thành code; **chưa chạy được** vì cần baseline chạy trọn vẹn trước |
+| Baseline orchestration | `src/pipelines/phase1.py` — `main()` | Raw records (TV1), cleaning + test set (TV2), quality + reporting (TV3) | `baseline_metrics.json`, `baseline_answers.json`, `phase1_report.md` | **Hoàn thành và đã chạy trọn vẹn** sau khi TV3 merge; sinh đủ artifact baseline |
+| Corruption/repair/compare flow | `src/pipelines/corruption_flow.py` — `main()` | Baseline artifacts + raw snapshot | `corrupted_metrics.json`, `repaired_metrics.json`, `corruption_report.md` | **Hoàn thành và đã chạy** sau baseline; sinh đủ corrupted/repaired metrics + comparison report |
 | Script entrypoints | `script/run_phase1.py`, `script/run_corruption_flow.py` | — | Hai entrypoint gọi đúng `main()` | Hoàn thành, đã xác minh import và chạy tới đúng điểm chặn |
 | Self-check offline (bổ sung) | `script/selfcheck_corruption.py` | Fixture tổng hợp tự sinh | 12 assertion kiểm tra corruption logic | Hoàn thành, 12/12 PASS |
 
@@ -181,7 +181,7 @@ evaluation set (...); baseline metrics (...). Run: uv run python script/run_phas
 
 > **Số liệu của lần dry run này KHÔNG phải số liệu nộp bài** và không được dùng ở mục 8. Nó chạy trên cleaning/test set giả do tôi tự viết để test, không phải của TV2; thư mục tạm đã xóa sau khi chạy. Ý nghĩa duy nhất của nó là chứng minh code orchestration của tôi chạy thông và bảng so sánh 3 trạng thái in ra đúng định dạng.
 
-**Artifact/log:** `script/selfcheck_corruption.py` (chạy lại được bất cứ lúc nào). Trong `data/` hiện chỉ có `data/raw/crossref_records.json` và `data/raw/crossref_response.json` do Thành viên 1 bàn giao — **chưa có artifact nào của tôi**, lý do ở mục 6. Không có secret trong bất kỳ log nào.
+**Artifact/log:** `script/selfcheck_corruption.py` (chạy lại được bất cứ lúc nào), và sau khi TV3 merge + pipeline chạy trọn vẹn, các artifact của tôi đã có đủ trong `data/`: `results/{baseline,corrupted,repaired}_metrics.json`, `results/*_answers.json`, `results/corruption_log.json`, `clean/papers_clean_{corrupted,repaired}.*`, `reports/corruption_report.md`. Không có secret trong bất kỳ log nào.
 
 ## 5. Một quyết định kỹ thuật quan trọng
 
@@ -221,9 +221,11 @@ Some member 4 corruption checks failed.
 
 - **Điều học được:** Một corruption "thất bại im lặng" còn tệ hơn corruption ném lỗi, vì nó làm hỏng kết luận của cả bài lab mà không để lại dấu vết. Thứ hai: viết test trên fixture **nhỏ hơn** dữ liệu thật là cách rẻ tiền để lộ ra các giả định ngầm về kích thước dữ liệu.
 
-### Blocker chưa xử lý xong
+### Blocker đã được giải quyết
 
-- **Phạm vi bị ảnh hưởng:** Toàn bộ artifact phải commit của tôi — `data/results/baseline_metrics.json`, `baseline_answers.json`, `corrupted_metrics.json`, `corrupted_answers.json`, `repaired_metrics.json`, `repaired_answers.json`, `corruption_log.json`, `data/clean/papers_clean_corrupted.*`, `papers_clean_repaired.*`, `data/reports/corruption_report.md`. Kéo theo mục 8 của báo cáo này chưa có số liệu.
+> Cập nhật 2026-08-06: TV3 đã merge `quality.py` + `reporting.py`. Tôi đã `git pull` và chạy `run_phase1.py` → `run_corruption_flow.py` trọn vẹn, sinh đủ toàn bộ artifact. Mục 8 đã điền số thật. Phần dưới giữ lại nguyên bản để ghi nhận blocker *đã từng* chặn ở đâu và cách đã loại trừ nguyên nhân.
+
+- **Phạm vi từng bị ảnh hưởng:** Toàn bộ artifact phải commit của tôi — `data/results/baseline_metrics.json`, `baseline_answers.json`, `corrupted_metrics.json`, `corrupted_answers.json`, `repaired_metrics.json`, `repaired_answers.json`, `corruption_log.json`, `data/clean/papers_clean_corrupted.*`, `papers_clean_repaired.*`, `data/reports/corruption_report.md`. Kéo theo mục 8 của báo cáo này chưa có số liệu.
 
 - **Nguyên nhân:** Thành viên 1 (merge `72d68e9`) và Thành viên 2 (merge `a1bec9d`) đã xong. Tôi đã xác minh trực tiếp bằng dữ liệu thật rằng bước 1 (load raw), bước 2 (clean + validate schema) và bước 4 (validate test set) chạy thông; bước 3 (build index) và bước 5 (evaluate) chưa chạy nên chưa có bằng chứng. Điểm chặn chắc chắn là **bước 6**, nơi còn 4 hàm `NotImplementedError` của Thành viên 3:
 
@@ -236,7 +238,7 @@ Some member 4 corruption checks failed.
 
 - **Những gì đã loại trừ:** Đã xác nhận blocker **không** nằm ở phần của tôi. Cụ thể: (1) môi trường và package cài đúng — `import pipelines.phase1` và `import pipelines.corruption_flow` đều thành công; (2) raw data của TV1 dùng được — đọc lại 24 records từ snapshot không lỗi; (3) contract với TV2 khớp — clean dataframe thật pass `_validate_clean_dataframe()`, test set thật pass `_validate_test_set()`, không bên nào phải sửa code; (4) logic corruption đúng cả trên fixture lẫn **trên clean data thật** — 12/12 self-check pass và 6/6 scenario kích hoạt đúng volume trên 24 dòng thật; (5) orchestration đúng — dry run với stub chạy hết cả 2 pha và sinh đủ artifact. Nói cách khác, chỉ cần 4 hàm trên có implementation là chạy được ngay, không cần sửa thêm gì trong 3 file của tôi.
 
-- **Bước tiếp theo:** Đợi TV3 merge `quality.py` + `reporting.py`. Sau đó `git pull` và chạy tuần tự `python script/run_phase1.py` → `python script/run_corruption_flow.py`, rồi điền mục 8 bằng số thật đọc từ các file `*_metrics.json`.
+- **Đã thực hiện:** Sau khi TV3 merge `quality.py` + `reporting.py`, đã `git pull` và chạy tuần tự `python script/run_phase1.py` → `python script/run_corruption_flow.py`. Pipeline chạy trọn vẹn, sinh đủ artifact; mục 8 đã điền số thật đọc từ các file `*_metrics.json`.
 
 ## 7. Hiểu biết về luồng end-to-end
 
@@ -281,16 +283,16 @@ Quan trọng: repair phải được **dựng lại từ `data/raw/crossref_reco
 
 | Metric/signal | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
 | --- | ---: | ---: | ---: | --- |
-| `retrieval_hit_rate` | Chưa có | Chưa có | Chưa có | Pipeline dừng ở bước 6 — xem blocker ở mục 6 |
-| `mean_token_f1` | Chưa có | Chưa có | Chưa có | Pipeline dừng ở bước 6 — xem blocker ở mục 6 |
-| `judge_accuracy` | Chưa có | Chưa có | Chưa có | Pipeline dừng ở bước 6 — xem blocker ở mục 6 |
-| `mean_judge_score` | Chưa có | Chưa có | Chưa có | Pipeline dừng ở bước 6 — xem blocker ở mục 6 |
-| Quality checks | Chưa có | Chưa có | Chưa có | Phụ thuộc `run_data_quality_checks` của TV3 |
-| Freshness status | Chưa có | Chưa có | Chưa có | Phụ thuộc `build_freshness_report` của TV3 |
+| `retrieval_hit_rate` | 1.000 | 0.750 | 1.000 | Corrupted mất/nhiễu doc nên retrieval trượt 25%; repair về đúng baseline |
+| `mean_token_f1` | 1.000 | 0.709 | 1.000 | Summary hỏng kéo answer lệch ground_truth |
+| `judge_accuracy` | 1.000 | 0.667 | 1.000 | LLM judge (gpt-4o-mini) xác nhận chất lượng giảm rồi phục hồi |
+| `mean_judge_score` | 5.000 | 3.833 | 5.000 | Điểm judge giảm hơn 1 điểm khi corrupted |
+| Quality checks | 9/9 | 6/9 | 9/9 | Fail đúng uniqueness + duplicate + freshness |
+| Freshness status | fresh | stale (5) | fresh | 5 dòng vượt ngưỡng 180 ngày ở corrupted |
 
-> Tôi cố ý **không** điền số vào bảng trên. Số metrics duy nhất tôi từng thấy là từ lần dry run với cleaning/test set giả do tôi tự viết để test orchestration (mục 4) — điền chúng vào đây sẽ khiến báo cáo không khớp artifact thực tế trong `data/`. Bảng sẽ được cập nhật bằng số đọc trực tiếp từ `*_metrics.json` ngay sau khi TV3 merge.
+> Bảng trên đã được điền bằng số đọc trực tiếp từ `data/results/{baseline,corrupted,repaired}_metrics.json` và `data/quality/*.json` sau khi TV3 merge và pipeline chạy trọn vẹn cả hai pha (baseline + corruption flow) với LLM judge thật qua OpenRouter. Đây là artifact nộp bài thực tế, không phải số dry run ở mục 4.
 
-Tuy chưa có metrics ở cấp agent, các **tín hiệu ở cấp dataset** thì đã đo được thật trên clean data của TV2 (chi tiết ở mục 4). Đây chính là những tín hiệu mà quality checks và freshness monitoring của TV3 sẽ phải bắt được:
+Bên cạnh metrics ở cấp agent (bảng trên), các **tín hiệu ở cấp dataset** cũng khớp — đây chính là những tín hiệu mà quality checks và freshness monitoring của TV3 đã bắt được đúng:
 
 | Tín hiệu ở cấp dataset | Baseline | Corrupted | Ý nghĩa |
 | --- | ---: | ---: | --- |
@@ -304,14 +306,14 @@ Ghi chú về con số 5: scenario `stale_published_date` chỉ tác động 4 d
 
 ### Kết luận từ số liệu
 
-Chưa có số liệu để kết luận. Dưới đây là **cơ chế dự kiến** rút ra từ việc đọc code `qa.py`, `metrics.py`, `index.py` và từ thiết kế corruption của tôi — sẽ đối chiếu lại với số thật khi có:
+Số thật đã có sau khi pipeline chạy trọn vẹn. Cơ chế dự kiến tôi rút ra từ việc đọc `qa.py`, `metrics.py`, `index.py` đã được **số aggregate xác nhận**:
 
-1. `blank_summary` + `noisy_summary` → `text_for_embedding` mất nội dung hoặc bị nhiễu kéo lệch vector; đồng thời `quality_corrupted.json` fail check summary rỗng → `retrieval_hit_rate` giảm, và vì `answer_question()` lấy câu trả lời từ `first_sentence(summary)` của document top-1 nên `mean_token_f1` giảm theo, kéo `judge_accuracy` xuống cùng.
-2. Repair dựng lại từ raw → `repair_verification` xác nhận đủ record và hết duplicate, quality checks pass lại, freshness về mức baseline → cả 4 metric agent quay về xấp xỉ baseline.
+1. `blank_summary` + `noisy_summary` → `text_for_embedding` mất nội dung hoặc bị nhiễu kéo lệch vector; đồng thời `corrupted.json` fail check summary/duplicate → `retrieval_hit_rate` giảm 0.25, và vì `answer_question()` lấy câu trả lời từ `first_sentence(summary)` của document top-1 nên `mean_token_f1` giảm 0.29, kéo `judge_accuracy` xuống 0.667. Khớp với `data/results/corrupted_metrics.json`.
+2. Repair dựng lại từ raw → `repair_verification` xác nhận `rows_restored_by_repair: 3/3`, `duplicate_rows_in_repaired: 0`, `matches_baseline_ids: true`; quality checks pass lại 9/9, freshness về fresh → cả 4 metric agent quay về đúng baseline (delta +0.000). Khớp với `data/results/repaired_metrics.json`.
 
 **Corruption nào ảnh hưởng rõ nhất và vì sao?** Dự đoán của tôi: `drop_latest_records` gây thiệt hại **cứng nhất** — record đã không còn trong corpus thì không cách nào retrieve ra, mọi test case trỏ tới nó chắc chắn hit = 0, không có đường cứu vãn nào ở tầng dưới. `blank_summary` gây thiệt hại **rộng nhất** vì nó đánh đồng thời cả hai tầng: vector rỗng làm hỏng retrieval, và `first_sentence("")` rỗng đẩy `token_f1` về đúng 0.0 theo nhánh guard trong `_token_f1()`. Ngược lại `stale_published_date` có lẽ **ít ảnh hưởng tới metrics agent nhất** — nó chỉ làm sai câu trả lời cho các câu hỏi dạng "when was..." — nhưng lại là scenario duy nhất mà **chỉ freshness monitoring bắt được**, nên nó có giá trị chứng minh riêng cho mục observability. Sẽ kiểm chứng bằng cách đọc `corrupted_answers.json`, đối chiếu `retrieval_hit` và `token_f1` của từng câu với danh sách `paper_ids` theo từng scenario trong `corruption_log.json`.
 
-**Kết quả nào khác với kỳ vọng ban đầu?** Chưa đủ dữ liệu để trả lời. Một giả thuyết tôi muốn kiểm tra khi có số: `truncated_title` có thể ảnh hưởng **ít hơn** tôi tưởng, vì `answer_question()` khi không tra được exact title vẫn rơi về semantic search, mà semantic search chủ yếu dựa vào summary — vốn còn nguyên ở những dòng chỉ bị cắt title (do các scenario không chọn trùng dòng). Nếu đúng vậy thì đó là một ví dụ hay về việc pipeline có đường lui làm giảm nhẹ tác động của một loại lỗi dữ liệu.
+**Kết quả nào khác với kỳ vọng ban đầu?** Số aggregate đã có, nhưng vì cả 6 scenario chạy đồng thời nên chưa tách được đóng góp riêng của từng loại — giả thuyết dưới đây vẫn cần chạy per-scenario (mục 9) mới kiểm chứng được. Giả thuyết tôi muốn kiểm tra: `truncated_title` có thể ảnh hưởng **ít hơn** tôi tưởng, vì `answer_question()` khi không tra được exact title vẫn rơi về semantic search, mà semantic search chủ yếu dựa vào summary — vốn còn nguyên ở những dòng chỉ bị cắt title (do các scenario không chọn trùng dòng). Nếu đúng vậy thì đó là một ví dụ hay về việc pipeline có đường lui làm giảm nhẹ tác động của một loại lỗi dữ liệu.
 
 ## 9. Điều học được và hướng cải thiện
 

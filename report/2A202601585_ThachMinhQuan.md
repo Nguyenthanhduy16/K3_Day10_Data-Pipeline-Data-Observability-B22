@@ -144,27 +144,27 @@ Ngoài 4 lệnh trên, tôi còn dựng một index MiniLM + ChromaDB tạm **ng
 
 | Metric/signal        | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
 | -------------------- | -------: | --------: | -------: | -------------------- |
-| `retrieval_hit_rate` |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
-| `mean_token_f1`      |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
-| `judge_accuracy`     |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
-| `mean_judge_score`   |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
-| Quality checks       |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
-| Freshness status     |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| `retrieval_hit_rate` |    1.000 |     0.750 |    1.000 | Corruption làm mất/nhiễu document nên retrieval trượt; repair đưa về đúng baseline |
+| `mean_token_f1`      |    1.000 |     0.709 |    1.000 | `text_for_embedding` hỏng làm câu trả lời lệch khỏi ground_truth tôi dựng từ abstract |
+| `judge_accuracy`     |    1.000 |     0.667 |    1.000 | LLM judge (gpt-4o-mini) xác nhận chất lượng giảm rồi phục hồi |
+| `mean_judge_score`   |    5.000 |     3.833 |    5.000 | Điểm judge giảm hơn 1 điểm khi corrupted |
+| Quality checks       |      9/9 |       6/9 |      9/9 | Fail đúng ở uniqueness, duplicate, freshness |
+| Freshness status     |    fresh | stale (5) |    fresh | Ngưỡng 180 ngày; corruption đẩy 5 dòng quá hạn |
 
 ### Kết luận từ số liệu
 
 Hoàn thành hai chuỗi nguyên nhân–bằng chứng sau:
 
-1. [Data corruption] → [quality/freshness signal thay đổi] → [agent metric thay đổi].
-2. [Repair action] → [quality/freshness signal phục hồi] → [agent metric phục hồi hoặc chưa phục hồi].
+1. Corruption (`blank_summary`, `noisy_summary`, `drop_latest`) làm hỏng chính cột `text_for_embedding` mà tôi dựng → quality checks tụt còn 6/9 và freshness thành stale → `retrieval_hit_rate` giảm 0.25 và `mean_token_f1` giảm 0.29 (`data/results/corrupted_metrics.json`).
+2. Repair rebuild clean dataset từ raw snapshot theo đúng schema của tôi → quality về 9/9, freshness fresh trở lại → cả bốn agent metric quay về đúng baseline, delta +0.000 (`data/results/repaired_metrics.json`).
 
 Corruption nào ảnh hưởng rõ nhất và vì sao?
 
-[Phân tích dựa trên số liệu.]
+Nhóm làm hỏng nội dung nhúng (`blank_summary` + `noisy_summary`) tác động rõ nhất, vì `text_for_embedding` tôi ghép chủ yếu từ summary — hỏng summary kéo lệch vector nên trượt cả retrieval lẫn token_f1. `drop_latest_records` gây thiệt hại cứng: 3 record biến mất khỏi corpus thì không cách nào retrieve, mọi test case trỏ tới chúng chắc chắn miss.
 
 Kết quả nào khác với kỳ vọng ban đầu?
 
-[Nêu kết quả, giả thuyết và cách đã kiểm tra.]
+Baseline đạt trần 1.000 ở mọi metric — đúng như lo ngại tôi đã nêu ở mục 5/9: evaluation set tôi dựng lấy ground_truth từ abstract và `qa.py` có bước lookup chính xác theo title, nên baseline không còn dư địa đo. Vì vậy giá trị nằm ở delta giữa các trạng thái, không phải con số tuyệt đối. Kiểm chứng: `baseline_answers.json` cho thấy answer trùng khít ground_truth ở toàn bộ 24 câu.
 
 ## 9. Điều học được và hướng cải thiện
 
