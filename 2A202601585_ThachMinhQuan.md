@@ -16,32 +16,32 @@
 
 ### Phần việc sở hữu
 
-| Module/deliverable      | File/hàm phụ trách                                                                        | Input nhận vào                                                    | Output bàn giao                                              | Trạng thái  |
-| ----------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------ | ----------- |
-| Cleaning & clean schema | `src/ingestion/cleaning.py` — `build_clean_dataframe(records, run_date)`                  | `data/raw/crossref_records.json` (24 `PaperRecord`, từ Thành viên 1) | `data/clean/papers_clean.csv`, `data/clean/papers_clean.json` (24 dòng × 16 cột) | Hoàn thành |
-| Evaluation set          | `src/evaluation/testset.py` — `build_test_set(df, output_path)`                           | `data/clean/papers_clean.json`                                    | `data/eval/test_set.json` (24 sample / 8 paper)              | Hoàn thành |
-| Helper cho downstream   | `cleaning.py` — `build_embedding_text`, `refresh_derived_fields`, `load_clean_dataframe` | Clean dataframe / artifact trên đĩa                               | 3 hàm public để Thành viên 3-4 tái dùng schema                | Hoàn thành |
+| Module/deliverable      | File/hàm phụ trách                                                                       | Input nhận vào                                                       | Output bàn giao                                                                  | Trạng thái |
+| ----------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------- |
+| Cleaning & clean schema | `src/ingestion/cleaning.py` — `build_clean_dataframe(records, run_date)`                 | `data/raw/crossref_records.json` (24 `PaperRecord`, từ Thành viên 1) | `data/clean/papers_clean.csv`, `data/clean/papers_clean.json` (24 dòng × 16 cột) | Hoàn thành |
+| Evaluation set          | `src/evaluation/testset.py` — `build_test_set(df, output_path)`                          | `data/clean/papers_clean.json`                                       | `data/eval/test_set.json` (24 sample / 8 paper)                                  | Hoàn thành |
+| Helper cho downstream   | `cleaning.py` — `build_embedding_text`, `refresh_derived_fields`, `load_clean_dataframe` | Clean dataframe / artifact trên đĩa                                  | 3 hàm public để Thành viên 3-4 tái dùng schema                                   | Hoàn thành |
 
 Tôi không sở hữu và không sửa `src/ingestion/crossref.py`, `src/retrieval/`, `src/observability/`, `src/pipelines/`.
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
-| Hoạt động                                              | Thành viên/module được hỗ trợ | Kết quả                                                                                                                                                                    |
-| ------------------------------------------------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Kiểm tra điều kiện bàn giao mốc 1 trước khi nhận việc | Thành viên 1 / `crossref.py`  | Xác nhận đạt cả 6 điều kiện; phát hiện `categories` rỗng 24/24 và truy được nguyên nhân                                                                                     |
-| Chẩn đoán nguyên nhân `categories` rỗng                | Thành viên 1 / `crossref.py`  | Chạy 4 phép thử API, chứng minh là giới hạn nguồn chứ không phải lỗi parse; đề xuất fallback `container-title` (đã xác nhận trường này có dữ liệu). Không tự sửa file người khác |
-| Bọc rủi ro schema khi reload artifact                  | Thành viên 3-4                | Viết `load_clean_dataframe()` để chặn lỗi `NaN` mô tả ở mục 6                                                                                                              |
+| Hoạt động                                             | Thành viên/module được hỗ trợ | Kết quả                                                                                                                                                                          |
+| ----------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kiểm tra điều kiện bàn giao mốc 1 trước khi nhận việc | Thành viên 1 / `crossref.py`  | Xác nhận đạt cả 6 điều kiện; phát hiện `categories` rỗng 24/24 và truy được nguyên nhân                                                                                          |
+| Chẩn đoán nguyên nhân `categories` rỗng               | Thành viên 1 / `crossref.py`  | Chạy 4 phép thử API, chứng minh là giới hạn nguồn chứ không phải lỗi parse; đề xuất fallback `container-title` (đã xác nhận trường này có dữ liệu). Không tự sửa file người khác |
+| Bọc rủi ro schema khi reload artifact                 | Thành viên 3-4                | Viết `load_clean_dataframe()` để chặn lỗi `NaN` mô tả ở mục 6                                                                                                                    |
 
 ## 3. Kết quả theo vai trò
 
-| Nhiệm vụ đã thực hiện                                        | File/hàm/artifact liên quan                                 | Kết quả bàn giao                                                                       | Cách xác minh                                                     |
-| -------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Làm sạch 24 raw record thành clean dataset                      | `src/ingestion/cleaning.py`, `data/clean/papers_clean.*`     | 24/24 dòng giữ lại, 16 cột, `paper_id` unique                                          | Lệnh L1 mục 4                                                       |
-| Strip thẻ XML/HTML khỏi title và summary                        | `_clean_text()`                                             | Title `Hi‐ <scp>RAG</scp> : A Hierarchical…` → `Hi-RAG: A Hierarchical…`               | So sánh `data/raw/crossref_records.json` với `papers_clean.json`     |
-| Bỏ nhãn `Abstract`/`Background.` còn sót trong abstract        | `_strip_leading_label()`                                    | 9/24 summary có tiền tố, sau clean còn 0                                                | `first_sentence()` của mọi summary đều ≥ 100 ký tự, không nhãn      |
-| Tính `published` chuẩn ISO và `age_days`                        | `_parse_date()`, `_age_days()`                              | `age_days` kiểu int, khoảng 5-175 ngày                                                  | Lệnh L4 mục 4                                                       |
-| Tạo `text_for_embedding` theo format quy định                   | `build_embedding_text()`                                    | 24/24 khớp `Title: … \| Authors: … \| Summary: …`                                        | Lệnh L4 mục 4                                                       |
-| Sinh evaluation set đóng băng                                   | `src/evaluation/testset.py`, `data/eval/test_set.json`      | 24 sample / 8 paper / 3 loại (summary 8, authors 8, date 8)                              | Lệnh L2, L3 mục 4                                                   |
+| Nhiệm vụ đã thực hiện                                   | File/hàm/artifact liên quan                              | Kết quả bàn giao                                                         | Cách xác minh                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| Làm sạch 24 raw record thành clean dataset              | `src/ingestion/cleaning.py`, `data/clean/papers_clean.*` | 24/24 dòng giữ lại, 16 cột, `paper_id` unique                            | Lệnh L1 mục 4                                                    |
+| Strip thẻ XML/HTML khỏi title và summary                | `_clean_text()`                                          | Title `Hi‐ <scp>RAG</scp> : A Hierarchical…` → `Hi-RAG: A Hierarchical…` | So sánh `data/raw/crossref_records.json` với `papers_clean.json` |
+| Bỏ nhãn `Abstract`/`Background.` còn sót trong abstract | `_strip_leading_label()`                                 | 9/24 summary có tiền tố, sau clean còn 0                                 | `first_sentence()` của mọi summary đều ≥ 100 ký tự, không nhãn   |
+| Tính `published` chuẩn ISO và `age_days`                | `_parse_date()`, `_age_days()`                           | `age_days` kiểu int, khoảng 5-175 ngày                                   | Lệnh L4 mục 4                                                    |
+| Tạo `text_for_embedding` theo format quy định           | `build_embedding_text()`                                 | 24/24 khớp `Title: … \| Authors: … \| Summary: …`                        | Lệnh L4 mục 4                                                    |
+| Sinh evaluation set đóng băng                           | `src/evaluation/testset.py`, `data/eval/test_set.json`   | 24 sample / 8 paper / 3 loại (summary 8, authors 8, date 8)              | Lệnh L2, L3 mục 4                                                |
 
 Một output cụ thể phần việc của tôi tạo ra:
 
@@ -68,13 +68,13 @@ Loại câu hỏi `categories` đã được cài sẵn nhưng sinh ra 0 sample,
 
 ### Input, output và contract
 
-| Thành phần              | Mô tả                                                                                                                                                                                                                |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Input                   | `list[PaperRecord]` đọc từ `data/raw/crossref_records.json` + `run_date: datetime`                                                                                                                                    |
+| Thành phần              | Mô tả                                                                                                                                                                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input                   | `list[PaperRecord]` đọc từ `data/raw/crossref_records.json` + `run_date: datetime`                                                                                                                                                                                                     |
 | Output                  | `pd.DataFrame` 16 cột: `paper_id`, `title`, `summary`, `authors`, `categories`, `primary_category`, `published`, `updated`, `age_days`, `authors_joined`, `categories_joined`, `summary_chars`, `abs_url`, `pdf_url`, `comment`, `text_for_embedding`; và `list[dict]` test set 5 khóa |
-| Module phụ thuộc        | `ingestion/crossref.py` (`PaperRecord`), `core/utils.py`, `core/config.py` (`settings.paths`)                                                                                                                          |
-| Module sử dụng output   | `retrieval/index.py` (đọc 9 cột dựng metadata Chroma), `evaluation/metrics.py` (đọc test set), `observability/quality.py` (đọc `age_days`, `summary_chars`), `pipelines/phase1.py`, `pipelines/corruption_flow.py`     |
-| Điều kiện lỗi cần xử lý | Abstract có thẻ XML; title có markup; `subject` rỗng nên `categories` là list rỗng; ngày thiếu hoặc sai format; `paper_id` trùng; title trùng khác DOI; chuỗi rỗng biến thành `NaN` khi round-trip qua CSV               |
+| Module phụ thuộc        | `ingestion/crossref.py` (`PaperRecord`), `core/utils.py`, `core/config.py` (`settings.paths`)                                                                                                                                                                                          |
+| Module sử dụng output   | `retrieval/index.py` (đọc 9 cột dựng metadata Chroma), `evaluation/metrics.py` (đọc test set), `observability/quality.py` (đọc `age_days`, `summary_chars`), `pipelines/phase1.py`, `pipelines/corruption_flow.py`                                                                     |
+| Điều kiện lỗi cần xử lý | Abstract có thẻ XML; title có markup; `subject` rỗng nên `categories` là list rỗng; ngày thiếu hoặc sai format; `paper_id` trùng; title trùng khác DOI; chuỗi rỗng biến thành `NaN` khi round-trip qua CSV                                                                             |
 
 ### Cách xác minh
 
@@ -142,44 +142,29 @@ Ngoài 4 lệnh trên, tôi còn dựng một index MiniLM + ChromaDB tạm **ng
 
 ### Metrics chính
 
-Tại thời điểm nộp báo cáo cá nhân này, **ba trạng thái chưa được chạy đầy đủ**, nên tôi không điền số cho corrupted và repaired. Kiểm chứng: `data/results/`, `data/embeddings/`, `data/reports/` đều còn rỗng, và `src/observability/quality.py`, `src/observability/reporting.py` vẫn còn `NotImplementedError` nên `phase1.py` chưa chạy hết được. Điền số vào đây lúc này sẽ là bịa.
-
-| Metric/signal        |                                    Baseline | Corrupted | Repaired | Nhận xét của cá nhân                                                                                                              |
-| -------------------- | -------------------------------------------: | ---------: | --------: | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `retrieval_hit_rate` | chưa có artifact chính thức (đo tại chỗ: 1.0000) | chưa chạy | chưa chạy | Sàn đo sạch. `qa.py` có bước lookup chính xác theo title nên baseline đạt trần; corruption cắt ngắn title và xóa record sẽ phá bước này |
-| `mean_token_f1`      | chưa có artifact chính thức (đo tại chỗ: 1.0000) | chưa chạy | chưa chạy | Bằng đúng 1.0 nhờ `ground_truth` trích từ chính trường mà `qa.py` trả lời, nên mọi mức sụt sau này quy được về dữ liệu hỏng           |
-| `judge_accuracy`     |                                    chưa chạy | chưa chạy | chưa chạy | Cần LLM provider; thuộc bước của Thành viên 4                                                                                        |
-| `mean_judge_score`   |                                    chưa chạy | chưa chạy | chưa chạy | Như trên                                                                                                                             |
-| Quality checks       |                                    chưa chạy | chưa chạy | chưa chạy | `quality.py` của Thành viên 3 chưa implement. Dữ liệu đầu vào của nó đã sẵn sàng: `paper_id` unique, không cột rỗng                   |
-| Freshness status     |                                    chưa chạy | chưa chạy | chưa chạy | Clean data hiện có `age_days` từ 5 đến 175 ngày, đều dưới ngưỡng 180 nên baseline dự kiến `is_fresh = true`                           |
-
-Số "đo tại chỗ" ở trên là kết quả tôi tự chạy trên index MiniLM + ChromaDB dựng tạm ngoài repo để kiểm tra bàn giao, **không phải** nội dung của `data/results/baseline_metrics.json`. Chi tiết:
-
-| Phép đo tại chỗ (24 câu hỏi, `top_k=4`) | Kết quả |
-| ---------------------------------------- | --------- |
-| `retrieval_hit_rate` qua `qa.answer_question` | 1.0000 |
-| `mean_token_f1` (summary / authors / date) | 1.0000 / 1.0000 / 1.0000 |
-| Vector search thuần, độ chính xác top-1     | 0.8750 |
-| Vector search thuần, tỉ lệ trúng trong top-4 | 1.0000 |
-
-Hai dòng cuối là phép đo tôi thấy quan trọng nhất: chúng bỏ qua bước lookup chính xác theo title của `qa.py` để xem embedding tự nó mạnh đến đâu. Kết quả 0.8750 top-1 cho thấy corpus thực sự retrieve được bằng ngữ nghĩa, nên khi corruption phá title thì hệ thống sẽ suy giảm ở mức đo được chứ không sập thẳng về 0 — nghĩa là thí nghiệm sẽ cho tín hiệu có độ phân giải tốt.
+| Metric/signal        | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
+| -------------------- | -------: | --------: | -------: | -------------------- |
+| `retrieval_hit_rate` |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| `mean_token_f1`      |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| `judge_accuracy`     |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| `mean_judge_score`   |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| Quality checks       |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
+| Freshness status     |      [ ] |       [ ] |      [ ] | [Nhận xét]           |
 
 ### Kết luận từ số liệu
 
-Hai chuỗi nguyên nhân–bằng chứng dưới đây tôi viết ở dạng **giả thuyết cần kiểm chứng**, vì chưa có số liệu corrupted/repaired:
+Hoàn thành hai chuỗi nguyên nhân–bằng chứng sau:
 
-1. [Xóa các record mới nhất + làm stale `published`] → [`stale_rows` tăng, `is_fresh` chuyển false; quality check phát hiện dòng trùng và summary rỗng] → [`retrieval_hit_rate` giảm vì tài liệu chứa đáp án không còn trong index; các câu hỏi loại `date` sai vì `_extract_answer` trả về `published` đã bị đẩy lùi].
-2. [Repair dựng lại clean dataset từ `crossref_records.json` gốc] → [`stale_rows` về 0, quality checks pass trở lại] → [`retrieval_hit_rate` và `mean_token_f1` quay về mức baseline, vì repair tái tạo đúng schema và đúng `paper_id` mà test set đóng băng đang trỏ tới].
+1. [Data corruption] → [quality/freshness signal thay đổi] → [agent metric thay đổi].
+2. [Repair action] → [quality/freshness signal phục hồi] → [agent metric phục hồi hoặc chưa phục hồi].
 
 Corruption nào ảnh hưởng rõ nhất và vì sao?
 
-Chưa có số để kết luận. Dựa trên cấu trúc dữ liệu tôi đã dựng, tôi **dự đoán** việc xóa các record mới nhất gây thiệt hại lớn nhất, vì đây là dạng hỏng duy nhất khiến tài liệu chứa đáp án biến mất hoàn toàn khỏi index — `retrieval_hit_rate` của những câu hỏi đó tụt thẳng về 0 và không cách nào bù lại. Các dạng còn lại chỉ làm nhiễu: blank summary vẫn giữ title và metadata nên lookup theo title còn hoạt động; truncate title phá lookup nhưng vector search vẫn có 0.8750 cơ hội cứu ở top-1. Cần đối chiếu `corruption_log.json` với `corrupted_answers.json` theo từng `paper_id` để xác nhận hoặc bác bỏ dự đoán này.
+[Phân tích dựa trên số liệu.]
 
 Kết quả nào khác với kỳ vọng ban đầu?
 
-Tôi ban đầu nghĩ `categories` sẽ có dữ liệu vì cả `PaperRecord`, Contract Chung của nhóm lẫn `Guide.md` đều yêu cầu trường này, và Thành viên 1 cũng đã chủ động đưa `subject` vào tham số `select`. Thực tế 24/24 record rỗng. Giả thuyết đầu tiên của tôi là lỗi parse, nhưng đọc code thấy `item.get("subject", [])` là đúng. Tôi kiểm tra bằng bốn phép thử mô tả ở mục 6 và loại trừ được cả lỗi parse lẫn ảnh hưởng của `select` và của filter ngày. Bài học là không nên suy ra nguyên nhân từ triệu chứng: nếu tôi dừng ở giả thuyết đầu, tôi đã báo nhầm lỗi cho Thành viên 1.
-
-Điều bất ngờ thứ hai là lỗi `NaN` ở mục 6 — nó không xuất hiện ở bất kỳ bước nào trong phần việc của tôi, chỉ lộ ra khi tôi cố tình kiểm tra artifact **sau khi đã ghi xuống đĩa** thay vì kiểm tra dataframe trong bộ nhớ.
+[Nêu kết quả, giả thuyết và cách đã kiểm tra.]
 
 ## 9. Điều học được và hướng cải thiện
 
